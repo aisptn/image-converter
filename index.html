@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>image converter</title>
+    <link rel="stylesheet" href="https://aisptn.github.io/reset.css/reset.css">
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        nav {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        nav ul {
+            display: flex;
+        }
+        nav ul li {
+            list-style: none;
+        }
+        button:disabled {
+            cursor: not-allowed;
+        }
+        section {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 1rem;
+        }
+        figure {
+            border: 1px dashed white;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 256px;
+            margin: 1rem;
+            padding: 1rem;
+            width: 180px;
+        }
+        figure img {
+            flex: 1;
+            max-height: 100%;
+            max-width: 100%;
+            min-height: 0;
+            object-fit: contain;
+        }
+        figcaption {
+            margin-top: auto;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><button id="open">open</button></li>
+                <li><button id="save">save</button></li>
+                <li><button id="clear">clear</button></li>
+            </ul>
+            <ul>
+                <li><button id="format" title="use left click or right click to change">format: </button></li>
+                <li><button id="quality" title="left click to increase, right click to decrease">quality: </button></li>
+                <li><button id="bg-color">bg color: </button></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+        </section>
+    </main>
+
+    <script>
+        const openButton = document.getElementById('open');
+        const saveButton = document.getElementById('save');
+        const clearButton = document.getElementById('clear');
+        const formatButton = document.getElementById('format');
+        const qualityButton = document.getElementById('quality');
+        const bgColorButton = document.getElementById('bg-color');
+
+        let state = 'empty';
+
+        //disable save and clear buttons when there is no image
+
+        openButton.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            input.click();
+            input.addEventListener('change', () => {
+                const files = input.files;
+                for (const file of files) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const figure = document.createElement('figure');
+                        const img = document.createElement('img');
+                        const figcaption = document.createElement('figcaption');
+                        img.src = e.target.result;
+                        figure.appendChild(img);
+                        document.querySelector('section').appendChild(figure);
+                        figcaption.textContent = file.name;
+                        figure.appendChild(figcaption);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        [formatButton, qualityButton].forEach(button => {
+            button.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+        });
+        
+
+        const formats = ['jpeg', 'png', 'webp'];
+        let currentFormatIndex = 0;
+        const updateQualityButtonState = () => {
+            qualityButton.disabled = formats[currentFormatIndex] === 'png';
+            qualityButton.textContent = `quality: ${formats[currentFormatIndex] === 'png' ? 1.0 : quality.toFixed(1)}`;
+        };
+        
+        formatButton.textContent = `format: ${formats[currentFormatIndex]}`;
+
+        formatButton.addEventListener('click', () => {
+            currentFormatIndex = (currentFormatIndex + 1) % formats.length;
+            formatButton.textContent = `format: ${formats[currentFormatIndex]}`;
+            updateQualityButtonState();
+            updateBgColorButtonState();
+        });
+        
+        formatButton.addEventListener('auxclick', (e) => {
+            currentFormatIndex = (currentFormatIndex - 1 + formats.length) % formats.length;
+            formatButton.textContent = `format: ${formats[currentFormatIndex]}`;
+            updateQualityButtonState();
+            updateBgColorButtonState();
+        });
+
+        let quality = 0.9;
+        qualityButton.textContent = `quality: ${quality.toFixed(1)}`;
+        qualityButton.addEventListener('click', () => {
+            quality = Math.min(1, quality + 0.1);
+            qualityButton.textContent = `quality: ${quality.toFixed(1)}`;
+        });
+
+        qualityButton.addEventListener('auxclick', (e) => {
+            quality = Math.max(0, quality - 0.1);
+            qualityButton.textContent = `quality: ${quality.toFixed(1)}`;
+        });
+
+        saveButton.addEventListener('click', () => {
+            const figures = document.querySelectorAll('figure');
+            figures.forEach(figure => {
+                const img = figure.querySelector('img');
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(blob => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `${figure.querySelector('figcaption').textContent.split('.').slice(0, -1).join('.')}.${formats[currentFormatIndex]}`;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                }, `image/${formats[currentFormatIndex]}`, quality);
+            });
+        });
+
+        const updateBgColorButtonState = () => {
+            bgColorButton.disabled = formats[currentFormatIndex] !== 'jpeg';
+        };
+
+        let bgColor = '#ffffff';
+        bgColorButton.textContent = `bg color: ${bgColor}`;
+        bgColorButton.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'color';
+            input.value = bgColor;
+            input.click();
+            input.addEventListener('change', () => {
+                bgColor = input.value;
+                bgColorButton.textContent = `bg color: ${bgColor}`;
+                const figures = document.querySelectorAll('figure');
+                figures.forEach(figure => {
+                    const img = figure.querySelector('img');
+                    img.style.backgroundColor = bgColor;
+                });
+            });
+        });
+
+        //prompt 'clear all images?' when clear button is clicked, if there are images
+        clearButton.addEventListener('click', () => {
+            const section = document.querySelector('section');
+            if (section.children.length > 0) {
+                if (confirm('Clear all images?')) {
+                    while (section.firstChild) {
+                        section.removeChild(section.firstChild);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
