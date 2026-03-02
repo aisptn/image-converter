@@ -86,14 +86,10 @@
         const qualityButton = document.getElementById('quality');
         const bgColorButton = document.getElementById('bg-color');
 
-        let state = 'empty';
-
-        //disable save and clear buttons when there is no image
-
         openButton.addEventListener('click', () => {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = 'image/*';
+            input.accept = 'image/avif,image/gif,image/jpeg,image/png,image/svg+xml,image/webp,image/bmp,image/x-icon,image/tiff';
             input.multiple = true;
             input.click();
             input.addEventListener('change', () => {
@@ -200,7 +196,6 @@
             });
         });
 
-        //prompt 'clear all images?' when clear button is clicked, if there are images
         clearButton.addEventListener('click', () => {
             const section = document.querySelector('section');
             if (section.children.length > 0) {
