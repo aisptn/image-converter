@@ -12,6 +12,10 @@
             flex-direction: column;
             height: 100vh;
         }
+        header {
+            position: sticky;
+            top: 0;
+        }
         nav {
             display: flex;
             gap: 1rem;
@@ -24,7 +28,13 @@
             list-style: none;
         }
         button:disabled {
-            cursor: not-allowed;
+            cursor: not-allowed; /*/ move to reset.css */
+        }
+        main {
+            padding: 1rem;
+        }
+        main, section {
+            height: 100%;
         }
         section {
             align-items: center;
@@ -32,6 +42,10 @@
             flex-wrap: wrap;
             justify-content: center;
             padding: 1rem;
+        }
+        section h1 {
+            color: gray;
+            text-align: center;
         }
         figure {
             border: 1px dashed white;
@@ -56,6 +70,9 @@
             width: 100%;
             word-wrap: break-word;
         }
+        .drop-hover {
+            border: 0.5rem dashed gray;
+        }
     </style>
 </head>
 <body>
@@ -63,18 +80,19 @@
         <nav>
             <ul>
                 <li><button id="open">open</button></li>
-                <li><button id="save">save</button></li>
-                <li><button id="clear">clear</button></li>
+                <li><button id="save" disabled>save</button></li>
+                <li><button id="clear" disabled>clear</button></li>
             </ul>
             <ul>
                 <li><button id="format" title="use left click or right click to change">format: </button></li>
-                <li><button id="quality" title="left click to increase, right click to decrease">quality: </button></li>
+                <li><button id="quality" title="use mouse button or scroll wheel to change">quality: </button></li>
                 <li><button id="bg-color">bg color: </button></li>
             </ul>
         </nav>
     </header>
     <main>
         <section>
+            <h1>drag and drop images here or click [open] to get started</h1>
         </section>
     </main>
 
@@ -85,31 +103,70 @@
         const formatButton = document.getElementById('format');
         const qualityButton = document.getElementById('quality');
         const bgColorButton = document.getElementById('bg-color');
+        const section = document.querySelector('section');
+        const description = section.querySelector('h1');
+        const openFormats = ['avif', 'bmp', 'gif', 'ico', 'jpeg', 'png', 'svg+xml', 'tiff', 'webp'];
+        const saveFormats = ['jpeg', 'png', 'webp'];
+
+        function handleFiles(files) {
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const figure = document.createElement('figure');
+                    const img = document.createElement('img');
+                    const figcaption = document.createElement('figcaption');
+                    img.src = e.target.result;
+                    figure.appendChild(img);
+                    section.appendChild(figure);
+                    figcaption.textContent = file.name;
+                    figure.appendChild(figcaption);
+                };
+                reader.readAsDataURL(file);
+            }
+            description.style.display = 'none';
+            saveButton.disabled = false;
+            clearButton.disabled = false;
+        }
+
+        function showDropHover() {
+            section.classList.add('drop-hover');
+        }
+
+        function hideDropHover() {
+            section.classList.remove('drop-hover');
+        }
+
+        section.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        section.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            showDropHover();
+        });
+
+        section.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            hideDropHover();
+        });
+
+        section.addEventListener('drop', (e) => {
+            e.preventDefault();
+            hideDropHover();
+            handleFiles(e.dataTransfer.files);
+        });
 
         openButton.addEventListener('click', () => {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = 'image/avif,image/gif,image/jpeg,image/png,image/svg+xml,image/webp,image/bmp,image/x-icon,image/tiff';
+            input.accept = 'image/avif,image/bmp,image/gif,image/ico,image/jpeg,image/png,image/svg+xml,image/tiff,image/webp';
             input.multiple = true;
             input.click();
             input.addEventListener('change', () => {
-                const files = input.files;
-                for (const file of files) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const figure = document.createElement('figure');
-                        const img = document.createElement('img');
-                        const figcaption = document.createElement('figcaption');
-                        img.src = e.target.result;
-                        figure.appendChild(img);
-                        document.querySelector('section').appendChild(figure);
-                        figcaption.textContent = file.name;
-                        figure.appendChild(figcaption);
-                    };
-                    reader.readAsDataURL(file);
-                }
+                handleFiles(input.files);
             });
         });
+
 
         [formatButton, qualityButton].forEach(button => {
             button.addEventListener('contextmenu', (e) => {
@@ -118,25 +175,24 @@
         });
         
 
-        const formats = ['jpeg', 'png', 'webp'];
         let currentFormatIndex = 0;
         const updateQualityButtonState = () => {
-            qualityButton.disabled = formats[currentFormatIndex] === 'png';
-            qualityButton.textContent = `quality: ${formats[currentFormatIndex] === 'png' ? 1.0 : quality.toFixed(1)}`;
+            qualityButton.disabled = saveFormats[currentFormatIndex] === 'png';
+            qualityButton.textContent = `quality: ${saveFormats[currentFormatIndex] === 'png' ? 1.0 : quality.toFixed(1)}`;
         };
         
-        formatButton.textContent = `format: ${formats[currentFormatIndex]}`;
+        formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
 
         formatButton.addEventListener('click', () => {
-            currentFormatIndex = (currentFormatIndex + 1) % formats.length;
-            formatButton.textContent = `format: ${formats[currentFormatIndex]}`;
+            currentFormatIndex = (currentFormatIndex + 1) % saveFormats.length;
+            formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
             updateQualityButtonState();
             updateBgColorButtonState();
         });
         
         formatButton.addEventListener('auxclick', (e) => {
-            currentFormatIndex = (currentFormatIndex - 1 + formats.length) % formats.length;
-            formatButton.textContent = `format: ${formats[currentFormatIndex]}`;
+            currentFormatIndex = (currentFormatIndex - 1 + saveFormats.length) % saveFormats.length;
+            formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
             updateQualityButtonState();
             updateBgColorButtonState();
         });
@@ -151,6 +207,30 @@
         qualityButton.addEventListener('auxclick', (e) => {
             quality = Math.max(0, quality - 0.1);
             qualityButton.textContent = `quality: ${quality.toFixed(1)}`;
+        });
+        
+        // add scroll to quality button
+        qualityButton.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                quality = Math.min(1, quality + 0.1);
+            } else {
+                quality = Math.max(0, quality - 0.1);
+            }
+            qualityButton.textContent = `quality: ${quality.toFixed(1)}`;
+        });
+
+        // add scroll to format button
+        formatButton.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                currentFormatIndex = (currentFormatIndex + 1) % saveFormats.length;
+            } else {
+                currentFormatIndex = (currentFormatIndex - 1 + saveFormats.length) % saveFormats.length;
+            }
+            formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
+            updateQualityButtonState();
+            updateBgColorButtonState();
         });
 
         saveButton.addEventListener('click', () => {
@@ -167,15 +247,15 @@
                 canvas.toBlob(blob => {
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = `${figure.querySelector('figcaption').textContent.split('.').slice(0, -1).join('.')}.${formats[currentFormatIndex]}`;
+                    a.download = `${figure.querySelector('figcaption').textContent.split('.').slice(0, -1).join('.')}.${saveFormats[currentFormatIndex]}`;
                     a.click();
                     URL.revokeObjectURL(a.href);
-                }, `image/${formats[currentFormatIndex]}`, quality);
+                }, `image/${saveFormats[currentFormatIndex]}`, quality);
             });
         });
 
         const updateBgColorButtonState = () => {
-            bgColorButton.disabled = formats[currentFormatIndex] !== 'jpeg';
+            bgColorButton.disabled = saveFormats[currentFormatIndex] !== 'jpeg';
         };
 
         let bgColor = '#ffffff';
@@ -203,6 +283,9 @@
                     while (section.firstChild) {
                         section.removeChild(section.firstChild);
                     }
+                    description.style.display = 'block';
+                    saveButton.disabled = true;
+                    clearButton.disabled = true;
                 }
             }
         });
