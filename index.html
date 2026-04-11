@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
     <title>image converter</title>
     <link rel="stylesheet" href="https://aisptn.github.io/reset.css/reset.css">
 
@@ -13,20 +14,18 @@
             height: 100vh;
         }
         header {
-            background: black;
+            background: canvas;
             position: sticky;
             top: 0;
+            z-index: 1;
         }
         nav {
             display: flex;
             gap: 1rem;
             justify-content: center;
-        }
-        nav ul {
-            display: flex;
-        }
-        nav ul li {
-            list-style: none;
+            fieldset {
+                display: flex;
+            }
         }
         main {
             padding: 1rem;
@@ -76,16 +75,17 @@
 <body>
     <header>
         <nav>
-            <ul>
-                <li><button id="open">open</button></li>
-                <li><button id="save" disabled>save</button></li>
-                <li><button id="clear" disabled>clear</button></li>
-            </ul>
-            <ul>
-                <li><button id="format" title="use mouse button or scroll wheel to change">format: </button></li>
-                <li><button id="quality" title="use mouse button or scroll wheel to change">quality: </button></li>
-                <li><button id="bg-color">bg color: </button></li>
-            </ul>
+            <fieldset>
+
+                <button id="open">open</button>
+                <button id="save" disabled>save</button>
+                <button id="clear" disabled>clear</button>
+            </fieldset>
+            <fieldset>
+                <button id="format" title="use mouse button or scroll wheel to change">format: </button>
+                <button id="quality" title="use mouse button or scroll wheel to change">quality: </button>
+                <button id="bg-color">bg color: </button>
+            </fieldset>
         </nav>
     </header>
     <main>
@@ -104,8 +104,8 @@
         const bgColorButton = document.getElementById('bg-color');
         const section = document.querySelector('section');
         const description = section.querySelector('h1');
-        const openFormats = ['avif', 'bmp', 'gif', 'ico', 'jpeg', 'png', 'svg+xml', 'tiff', 'webp'];
-        const saveFormats = ['jpeg', 'png', 'webp'];
+        const readFormats = ['avif', 'bmp', 'gif', 'ico', 'jpeg', 'png', 'svg+xml', 'tiff', 'webp'];
+        const writeFormats = ['jpeg', 'png', 'webp'];
 
         function handleFiles(files) {
             for (const file of files) {
@@ -176,22 +176,22 @@
 
         let currentFormatIndex = 0;
         const updateQualityButtonState = () => {
-            qualityButton.disabled = saveFormats[currentFormatIndex] === 'png';
-            qualityButton.textContent = `quality: ${saveFormats[currentFormatIndex] === 'png' ? 1.0 : quality.toFixed(1)}`;
+            qualityButton.disabled = writeFormats[currentFormatIndex] === 'png';
+            qualityButton.textContent = `quality: ${writeFormats[currentFormatIndex] === 'png' ? 1.0 : quality.toFixed(1)}`;
         };
         
-        formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
+        formatButton.textContent = `format: ${writeFormats[currentFormatIndex]}`;
 
         formatButton.addEventListener('click', () => {
-            currentFormatIndex = (currentFormatIndex + 1) % saveFormats.length;
-            formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
+            currentFormatIndex = (currentFormatIndex + 1) % writeFormats.length;
+            formatButton.textContent = `format: ${writeFormats[currentFormatIndex]}`;
             updateQualityButtonState();
             updateBgColorButtonState();
         });
         
         formatButton.addEventListener('auxclick', (e) => {
-            currentFormatIndex = (currentFormatIndex - 1 + saveFormats.length) % saveFormats.length;
-            formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
+            currentFormatIndex = (currentFormatIndex - 1 + writeFormats.length) % writeFormats.length;
+            formatButton.textContent = `format: ${writeFormats[currentFormatIndex]}`;
             updateQualityButtonState();
             updateBgColorButtonState();
         });
@@ -221,11 +221,11 @@
         formatButton.addEventListener('wheel', (e) => {
             e.preventDefault();
             if (e.deltaY < 0) {
-                currentFormatIndex = (currentFormatIndex + 1) % saveFormats.length;
+                currentFormatIndex = (currentFormatIndex + 1) % writeFormats.length;
             } else {
-                currentFormatIndex = (currentFormatIndex - 1 + saveFormats.length) % saveFormats.length;
+                currentFormatIndex = (currentFormatIndex - 1 + writeFormats.length) % writeFormats.length;
             }
-            formatButton.textContent = `format: ${saveFormats[currentFormatIndex]}`;
+            formatButton.textContent = `format: ${writeFormats[currentFormatIndex]}`;
             updateQualityButtonState();
             updateBgColorButtonState();
         });
@@ -244,15 +244,15 @@
                 canvas.toBlob(blob => {
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = `${figure.querySelector('figcaption').textContent.split('.').slice(0, -1).join('.')}.${saveFormats[currentFormatIndex]}`;
+                    a.download = `${figure.querySelector('figcaption').textContent.split('.').slice(0, -1).join('.')}.${writeFormats[currentFormatIndex]}`;
                     a.click();
                     URL.revokeObjectURL(a.href);
-                }, `image/${saveFormats[currentFormatIndex]}`, quality);
+                }, `image/${writeFormats[currentFormatIndex]}`, quality);
             });
         });
 
         const updateBgColorButtonState = () => {
-            bgColorButton.disabled = saveFormats[currentFormatIndex] !== 'jpeg';
+            bgColorButton.disabled = writeFormats[currentFormatIndex] !== 'jpeg';
         };
 
         let bgColor = '#ffffff';
