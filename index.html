@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
     <title>image converter</title>
-    <link rel="stylesheet" href="https://aisptn.github.io/reset.css/reset.css">
+    <link rel="stylesheet" href="https://aisptn.github.io/theme.css/theme.css">
 
     <style>
         body {
@@ -172,14 +172,14 @@
                 e.preventDefault();
             });
         });
-        
+
 
         let currentFormatIndex = 0;
         const updateQualityButtonState = () => {
             qualityButton.disabled = writeFormats[currentFormatIndex] === 'png';
             qualityButton.textContent = `quality: ${writeFormats[currentFormatIndex] === 'png' ? 1.0 : quality.toFixed(1)}`;
         };
-        
+
         formatButton.textContent = `format: ${writeFormats[currentFormatIndex]}`;
 
         formatButton.addEventListener('click', () => {
@@ -188,7 +188,7 @@
             updateQualityButtonState();
             updateBgColorButtonState();
         });
-        
+
         formatButton.addEventListener('auxclick', (e) => {
             currentFormatIndex = (currentFormatIndex - 1 + writeFormats.length) % writeFormats.length;
             formatButton.textContent = `format: ${writeFormats[currentFormatIndex]}`;
@@ -207,7 +207,7 @@
             quality = Math.max(0, quality - 0.1);
             qualityButton.textContent = `quality: ${quality.toFixed(1)}`;
         });
-        
+
         qualityButton.addEventListener('wheel', (e) => {
             e.preventDefault();
             if (e.deltaY < 0) {
